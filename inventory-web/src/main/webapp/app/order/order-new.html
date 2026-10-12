@@ -1,0 +1,29 @@
+<h2>New Order</h2>
+
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<form name="orderForm" ng-submit="vm.submitOrder()">
+    <div class="form-group">
+        <label for="customer">Customer</label>
+        <select class="form-control" id="customer" ng-model="vm.request.customerId"
+                ng-options="customer.id as (customer.firstName + ' ' + customer.lastName) for customer in vm.customers"
+                required>
+        </select>
+    </div>
+
+    <h4>Line Items</h4>
+    <div class="form-inline" ng-repeat="item in vm.request.lineItems track by $index" style="margin-bottom: 8px;">
+        <select class="form-control" ng-model="item.productId"
+                ng-options="product.id as (product.sku + ' - ' + product.name) for product in vm.products"
+                required>
+        </select>
+        <input type="number" class="form-control" ng-model="item.quantity" min="1" required style="width: 80px; margin-left: 8px;">
+        <button type="button" class="btn btn-sm btn-danger" ng-click="vm.removeLineItem($index)" style="margin-left: 8px;">Remove</button>
+    </div>
+    <button type="button" class="btn btn-default" ng-click="vm.addLineItem()">Add Line Item</button>
+
+    <div style="margin-top: 16px;">
+        <button type="submit" class="btn btn-primary" ng-disabled="vm.saving || orderForm.$invalid">Place Order</button>
+        <a class="btn btn-default" href="#!/orders">Cancel</a>
+    </div>
+</form>

@@ -1,0 +1,39 @@
+<h2>Invoices</h2>
+
+<div class="form-inline" style="margin-bottom: 16px;">
+    <label for="generateOrderId">Order ID:</label>
+    <input type="number" class="form-control" id="generateOrderId" ng-model="vm.generateOrderId" style="width: 100px; margin-left: 8px;">
+    <button class="btn btn-primary" ng-click="vm.generateInvoice()" style="margin-left: 8px;">Generate Invoice</button>
+</div>
+
+<div ng-if="vm.loading">Loading invoices...</div>
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<table class="table table-striped" ng-if="!vm.loading">
+    <thead>
+    <tr>
+        <th>Invoice #</th>
+        <th>Order #</th>
+        <th>Issue Date</th>
+        <th>Subtotal</th>
+        <th>Tax</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="invoice in vm.invoices">
+        <td>{{ invoice.invoiceNumber }}</td>
+        <td>{{ invoice.order.id }}</td>
+        <td>{{ invoice.issueDate | date:'short' }}</td>
+        <td>{{ invoice.subtotal | currency }}</td>
+        <td>{{ invoice.taxAmount | currency }}</td>
+        <td>{{ invoice.totalAmount | currency }}</td>
+        <td>{{ invoice.paymentStatus }}</td>
+        <td>
+            <button class="btn btn-sm btn-default" ng-if="invoice.paymentStatus === 'PENDING'" ng-click="vm.markPaid(invoice)">Mark Paid</button>
+        </td>
+    </tr>
+    </tbody>
+</table>

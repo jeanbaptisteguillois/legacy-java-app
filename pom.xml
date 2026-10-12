@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example.inventory</groupId>
+  <artifactId>inventory-management-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Inventory Management System - Parent</name>
+  <description>
+    Sample Jakarta EE 8 / EJB inventory and order management system, built for
+    WildFly deployment, with an AngularJS 1.x single-page frontend. Deliberately
+    pins several deprecated/EOL third-party libraries so that AWS Transform
+    Continuous Modernisation can detect and process them.
+  </description>
+
+  <modules>
+    <module>inventory-ejb</module>
+    <module>inventory-web</module>
+    <module>inventory-ear</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+
+    <!-- Jakarta EE 8 (javax.* namespace) - intentionally pre-Jakarta-9 rename,
+         so a future Java/EE upgrade will require the javax -> jakarta package
+         migration. -->
+    <jakarta.ee.version>8.0.1</jakarta.ee.version>
+
+    <!-- Deliberately outdated / EOL third-party libraries for AWS Transform
+         Continuous Modernisation detection. Do not bump these without reason. -->
+    <log4j.version>1.2.17</log4j.version>
+    <commons-lang.version>2.6</commons-lang.version>
+    <jackson.version>2.9.10</jackson.version>
+    <httpclient.version>3.1</httpclient.version>
+    <junit.version>4.11</junit.version>
+    <jaxb.version>2.3.0</jaxb.version>
+
+    <h2.version>1.4.197</h2.version>
+    <mockito.version>3.12.4</mockito.version>
+
+    <ejb.module.name>inventory-ejb</ejb.module.name>
+    <web.module.name>inventory-web</web.module.name>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Jakarta/Java EE 8 APIs - provided by WildFly at runtime -->
+      <dependency>
+        <groupId>javax</groupId>
+        <artifactId>javaee-api</artifactId>
+        <version>${jakarta.ee.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- ===================== Deprecated / EOL libraries ===================== -->
+
+      <!-- Log4j 1.x - EOL since 2015, superseded by Log4j 2 -->
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+
+      <!-- Commons Lang 2.x - superseded by commons-lang3 -->
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>${commons-lang.version}</version>
+      </dependency>
+
+      <!-- Jackson Databind 2.9.x - old line with multiple known CVEs -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
+      <!-- Apache Commons HttpClient 3.1 - EOL, superseded by HttpComponents HttpClient -->
+      <dependency>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
+        <version>${httpclient.version}</version>
+      </dependency>
+
+      <!-- Old standalone JAXB impl - needed on JDK 11 since javax.xml.bind was
+           removed from the JDK, but this specific line is the legacy/EOL one. -->
+      <dependency>
+        <groupId>javax.xml.bind</groupId>
+        <artifactId>jaxb-api</artifactId>
+        <version>${jaxb.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.xml.bind</groupId>
+        <artifactId>jaxb-impl</artifactId>
+        <version>${jaxb.version}</version>
+      </dependency>
+
+      <!-- JUnit 4.11 - old 4.x line (predates newer 4.12/4.13 fixes) -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- Mockito for unit testing EJBs in isolation (mocking EntityManager
+           and collaborating session beans). -->
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- H2 - dev/test database -->
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${h2.version}</version>
+      </dependency>
+
+      <!-- Internal modules -->
+      <dependency>
+        <groupId>com.example.inventory</groupId>
+        <artifactId>${ejb.module.name}</artifactId>
+        <version>${project.version}</version>
+        <type>ejb</type>
+      </dependency>
+      <dependency>
+        <groupId>com.example.inventory</groupId>
+        <artifactId>${web.module.name}</artifactId>
+        <version>${project.version}</version>
+        <type>war</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+          <configuration>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-ejb-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-ear-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
