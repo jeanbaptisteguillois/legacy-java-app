@@ -37,6 +37,9 @@
          versions as part of the modernisation. -->
     <log4j.version>2.25.4</log4j.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
+    <!-- Jackson: 2.18.11 is kept instead of the 2.15.2 baseline because the
+         project already resolved a newer line and downgrading would reintroduce
+         fixed security issues. -->
     <jackson.version>2.18.11</jackson.version>
     <junit.version>4.13.2</junit.version>
 
@@ -137,6 +140,9 @@
   <build>
     <pluginManagement>
       <plugins>
+        <!-- maven-compiler-plugin 3.11.0: the 3.0.5 baseline for Maven 3.8.x
+             predates <release> support (added in 3.6.0), which is required to
+             target Java 25, so the newer plugin is used deliberately. -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
