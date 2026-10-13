@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback configuration replacing the previous log4j2.properties. The console
+  pattern, root level and com.example.inventory level are reproduced exactly.
+-->
+<configuration>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{ISO8601} [%thread] %-5level %logger{1} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="com.example.inventory" level="DEBUG"/>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+</configuration>

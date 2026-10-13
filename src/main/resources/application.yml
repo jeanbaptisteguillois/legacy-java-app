@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: inventory-management
+
+  # Carried over from the WildFly inventory-ds.xml datasource (java:/InventoryDS).
+  # Sample-application credentials for an in-memory database; override in any real
+  # environment with SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD.
+  datasource:
+    url: jdbc:h2:mem:inventorydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: sa
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+
+  # Carried over from persistence.xml (persistence unit "inventoryPU").
+  # hibernate.dialect is omitted: Hibernate 6 auto-detects H2.
+  # transaction-type=JTA and jta-data-source were WildFly container integration
+  # and are replaced by Spring's local transaction manager.
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
