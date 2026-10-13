@@ -1,7 +1,7 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -18,8 +18,8 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.dto.LowStockAlertDto;
 import com.example.inventory.dto.SalesSummaryDto;
@@ -36,16 +36,14 @@ public class ReportingServiceTest {
     private NotificationServiceLocal notificationService;
     private ReportingService reportingService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         productService = mock(ProductServiceLocal.class);
         notificationService = mock(NotificationServiceLocal.class);
 
-        reportingService = new ReportingService();
+        reportingService = new ReportingService(productService, notificationService);
         setField(reportingService, "em", em);
-        setField(reportingService, "productService", productService);
-        setField(reportingService, "notificationService", notificationService);
     }
 
     @SuppressWarnings("unchecked")

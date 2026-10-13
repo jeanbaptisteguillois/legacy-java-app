@@ -1,6 +1,6 @@
 package com.example.inventory.rest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -10,10 +10,10 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 
-import jakarta.ws.rs.core.Response;
+import org.springframework.http.ResponseEntity;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.NotificationChannel;
 import com.example.inventory.entity.NotificationLog;
@@ -24,11 +24,10 @@ public class NotificationResourceTest {
     private NotificationServiceLocal notificationService;
     private NotificationResource resource;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         notificationService = mock(NotificationServiceLocal.class);
-        resource = new NotificationResource();
-        setField(resource, "notificationService", notificationService);
+        resource = new NotificationResource(notificationService);
     }
 
     @Test
@@ -50,9 +49,9 @@ public class NotificationResourceTest {
         NotificationLog log = new NotificationLog();
         when(notificationService.send(eq(NotificationChannel.SYSTEM_LOG), any(), any(), any())).thenReturn(log);
 
-        Response response = resource.sendTestNotification();
+        ResponseEntity<?> response = resource.sendTestNotification();
 
-        assertEquals(201, response.getStatus());
+        assertEquals(201, response.getStatusCode().value());
     }
 
     @Test
@@ -71,14 +70,8 @@ public class NotificationResourceTest {
         log.setSubject("Test Notification");
         when(notificationService.send(eq(NotificationChannel.SYSTEM_LOG), any(), any(), any())).thenReturn(log);
 
-        Response response = resource.sendTestNotification();
+        ResponseEntity<?> response = resource.sendTestNotification();
 
-        assertEquals(log, response.getEntity());
-    }
-
-    private static void setField(Object target, String fieldName, Object value) throws Exception {
-        java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
+        assertEquals(log, response.getBody());
     }
 }

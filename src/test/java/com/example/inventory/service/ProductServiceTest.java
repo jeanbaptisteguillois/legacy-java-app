@@ -1,9 +1,10 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -19,8 +20,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.Product;
 
@@ -29,7 +30,7 @@ public class ProductServiceTest {
     private EntityManager em;
     private ProductService productService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         productService = new ProductService();
@@ -48,11 +49,11 @@ public class ProductServiceTest {
         assertEquals("SKU-1", result.getSku());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void createProduct_withBlankSku_throws() {
         Product product = new Product();
         product.setSku("");
-        productService.createProduct(product);
+        assertThrows(IllegalArgumentException.class, () -> productService.createProduct(product));
     }
 
     @Test
@@ -105,14 +106,14 @@ public class ProductServiceTest {
         assertFalse(product.isLowStock());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void adjustStock_belowZero_throws() {
         Product product = new Product();
         product.setId(1L);
         product.setQuantityOnHand(2);
         when(em.find(Product.class, 1L)).thenReturn(product);
 
-        productService.adjustStock(1L, -5);
+        assertThrows(IllegalStateException.class, () -> productService.adjustStock(1L, -5));
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

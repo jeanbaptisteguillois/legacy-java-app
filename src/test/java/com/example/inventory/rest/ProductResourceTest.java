@@ -1,6 +1,6 @@
 package com.example.inventory.rest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -8,10 +8,10 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 
-import jakarta.ws.rs.core.Response;
+import org.springframework.http.ResponseEntity;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.Product;
 import com.example.inventory.service.ProductServiceLocal;
@@ -21,11 +21,10 @@ public class ProductResourceTest {
     private ProductServiceLocal productService;
     private ProductResource resource;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         productService = mock(ProductServiceLocal.class);
-        resource = new ProductResource();
-        setField(resource, "productService", productService);
+        resource = new ProductResource(productService);
     }
 
     @Test
@@ -41,19 +40,19 @@ public class ProductResourceTest {
         product.setId(1L);
         when(productService.findById(1L)).thenReturn(product);
 
-        Response response = resource.getProduct(1L);
+        ResponseEntity<?> response = resource.getProduct(1L);
 
-        assertEquals(200, response.getStatus());
-        assertEquals(product, response.getEntity());
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(product, response.getBody());
     }
 
     @Test
     public void getProduct_whenMissing_returnsNotFound() {
         when(productService.findById(404L)).thenReturn(null);
 
-        Response response = resource.getProduct(404L);
+        ResponseEntity<?> response = resource.getProduct(404L);
 
-        assertEquals(404, response.getStatus());
+        assertEquals(404, response.getStatusCode().value());
     }
 
     @Test
@@ -62,17 +61,17 @@ public class ProductResourceTest {
         input.setSku("SKU-1");
         when(productService.createProduct(input)).thenReturn(input);
 
-        Response response = resource.createProduct(input);
+        ResponseEntity<?> response = resource.createProduct(input);
 
-        assertEquals(201, response.getStatus());
+        assertEquals(201, response.getStatusCode().value());
         verify(productService).createProduct(input);
     }
 
     @Test
     public void deleteProduct_returnsNoContent() {
-        Response response = resource.deleteProduct(1L);
+        ResponseEntity<?> response = resource.deleteProduct(1L);
 
-        assertEquals(204, response.getStatus());
+        assertEquals(204, response.getStatusCode().value());
         verify(productService).deleteProduct(1L);
     }
 
@@ -82,11 +81,5 @@ public class ProductResourceTest {
         when(productService.findLowStock()).thenReturn(Collections.singletonList(product));
 
         assertEquals(1, resource.listLowStock().size());
-    }
-
-    private static void setField(Object target, String fieldName, Object value) throws Exception {
-        java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
     }
 }

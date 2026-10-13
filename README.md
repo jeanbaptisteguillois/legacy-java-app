@@ -1,31 +1,31 @@
 # Inventory & Order Management System (Sample App)
 
-A sample Jakarta EE 10 / EJB inventory and order management system, built for
-deployment to **WildFly**, with an **AngularJS 1.x** single-page frontend.
+A sample inventory and order management system with an **AngularJS 1.x**
+single-page frontend, running as a **standalone Spring Boot 3.5 application**
+with an embedded servlet container.
 
-The backend has been modernised to **Java 25 (LTS)** and the Jakarta EE 10
-`jakarta.*` package namespace, and its third-party libraries have been
-updated to current, supported versions. The frontend still pins several
-**deprecated / end-of-life (EOL) libraries** so that modernization tooling
-(e.g. **AWS Transform Continuous Modernisation**) can detect and process
-them.
+This application was originally a Jakarta EE 10 / EJB **EAR** deployed to
+**WildFly**. It has been migrated to Spring Boot: the application server, the
+EAR/WAR/EJB-JAR packaging, the EJB component model, the JAX-RS layer and the
+JNDI datasource are all gone. See [Migration outcome](#migration-outcome).
+
+The frontend still pins several **deprecated / end-of-life (EOL) libraries**
+so that modernization tooling (e.g. **AWS Transform Continuous
+Modernisation**) can detect and process them.
 
 ## Architecture
 
-Single **EAR** deployable containing two modules:
+Single **executable JAR** (`target/inventory.jar`):
 
-- `inventory-ejb` — Stateless Session Beans (`javax.ejb.*`), JPA entities
-  (`javax.persistence.*`), and JAX-RS (`javax.ws.rs.*`) REST endpoints,
-  backed by an embedded H2 database. The JAX-RS resource classes are
-  themselves `@Stateless` EJBs so the container injects their `@EJB`
-  service dependencies.
-- `inventory-web` — AngularJS 1.x SPA (WAR), consuming the JAX-RS APIs.
-- `inventory-ear` — bundles both modules plus a deployable WildFly
-  datasource descriptor (`META-INF/inventory-ds.xml`).
+- `src/main/java` — Spring `@Service` beans, JPA entities
+  (`jakarta.persistence.*`), and Spring MVC `@RestController` endpoints,
+  backed by an embedded H2 database.
+- `src/main/resources/static` — AngularJS 1.x SPA, served directly by Spring
+  Boot from the application root.
 
 ### Backend services
 
-| Service | EJB | REST base path |
+| Service | Spring bean | REST base path |
 |---|---|---|
 | Product / Inventory | `ProductService` | `/api/products` |
 | Customer | `CustomerService` | `/api/customers` |
@@ -34,42 +34,49 @@ Single **EAR** deployable containing two modules:
 | Notification | `NotificationService` | `/api/notifications` |
 | Reporting / Alerts | `ReportingService` | `/api/reports` |
 
-A `@Singleton @Startup` bean (`DataSeederBean`) seeds sample products and
-customers on application start.
+`DataSeederBean` (a `CommandLineRunner`) seeds sample products and customers
+once the application context has started.
 
 ### Frontend
 
-AngularJS 1.5.x SPA under `inventory-web/src/main/webapp`, using `ngRoute`
-for client-side routing. Modules: Dashboard, Products, Customers, Orders,
-Invoices, Notifications. Vendored libraries live under `webapp/lib/` (also
-described in `webapp/bower.json`, since Bower was the standard AngularJS-era
-frontend package manager).
+AngularJS 1.5.x SPA under `src/main/resources/static`, using `ngRoute` for
+client-side routing. Modules: Dashboard, Products, Customers, Orders,
+Invoices, Notifications. Vendored libraries live under `static/lib/` (also
+described in `static/bower.json`, since Bower was the standard AngularJS-era
+frontend package manager). `index.html` is served as the welcome file at `/`.
 
 ### Persistence
 
-The persistence unit `inventoryPU` (`inventory-ejb/.../persistence.xml`) is
-JTA-based and uses the datasource `java:/InventoryDS`. That datasource is
-defined by the deployable descriptor `inventory-ear/.../META-INF/inventory-ds.xml`,
-which points at an in-memory H2 database:
+Configured in `src/main/resources/application.yml` (replacing the former
+`persistence.xml` persistence unit `inventoryPU` and the WildFly
+`inventory-ds.xml` datasource `java:/InventoryDS`):
 
 ```
 jdbc:h2:mem:inventorydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
 ```
 
-The schema is generated on deploy (`hibernate.hbm2ddl.auto=create-drop`),
-so **data is reset every time the app is deployed or the server restarts**.
+The schema is generated on startup (`spring.jpa.hibernate.ddl-auto=create-drop`),
+so **data is reset every time the application restarts**. The sample
+credentials (`sa`/`sa`) can be overridden with `SPRING_DATASOURCE_URL`,
+`SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD`.
+
+Transactions are managed by Spring (`@Transactional` on each service),
+replacing EJB container-managed transactions.
 
 ## Backend dependency modernisation
 
 | Library | Was | Now | Where it's used |
 |---|---|---|---|
-| Log4j | 1.2.17 (EOL) | Log4j 2 `2.25.4` via `log4j-1.2-api` bridge | `LoggingUtil`, used across all services |
+| Application server | WildFly 31 (EAR) | Spring Boot 3.5.16 embedded Tomcat | Whole application |
+| Jakarta EE umbrella API | `jakarta.jakartaee-api` 10.0.0 (provided) | Spring Boot starters (web, data-jpa, validation, actuator) | Whole application |
+| Logging | Log4j 2 `2.25.4` via the `log4j-1.2-api` bridge | SLF4J + Logback (`spring-boot-starter-logging`) | `LoggingUtil`, used across all services |
 | Apache Commons Lang | 2.6 | `commons-lang3` `3.18.0` | `ProductService`, `CustomerService`, `InvoiceNumberGenerator` |
-| Jackson | 2.9.10 | `2.18.11` | `InvoiceService` (audit snapshot JSON) |
+| Jackson | 2.9.10 | `2.21.7` (BOM override; the 3.5.16 BOM's 2.21.4 has known CVEs) | `InvoiceService` (audit snapshot JSON), REST serialization |
 | Apache Commons HttpClient | 3.1 (EOL) | JDK `java.net.http.HttpClient` | `NotificationService` (webhook dispatch) |
-| javax.xml.bind / JAXB RI | 2.3.0 | `jakarta.xml.bind` from Jakarta EE 10 API | All JPA entities (`@XmlRootElement`) |
+| JAXB | container-provided | `jakarta.xml.bind-api` + `org.glassfish.jaxb:jaxb-runtime` | All JPA entities and DTOs (`@XmlRootElement`) |
+| JPA provider | WildFly-provided Hibernate | Hibernate 6.6 via `spring-boot-starter-data-jpa` | All entities / services |
 | H2 | 1.4.197 | `2.3.232` | Dev/test database |
-| JUnit / Mockito | 4.11 / 3.12.4 | `4.13.2` / `5.24.0` | All unit tests |
+| JUnit / Mockito | 4.13.2 / 5.24.0 | JUnit 5 Jupiter `5.12.2` / Mockito `5.24.0` | All unit tests |
 
 ## Deliberately deprecated / EOL frontend dependencies
 
@@ -78,10 +85,7 @@ so **data is reset every time the app is deployed or the server restarts**.
 | AngularJS | 1.5.11 | EOL since January 2022 | Entire frontend |
 | jQuery | 1.12.4 | Old 1.x line | Frontend (Bootstrap dependency) |
 | Bootstrap | 3.3.7 | Old 3.x line | Frontend styling |
-| Bower | — | Deprecated package manager | `webapp/bower.json` |
-
-Also note: the backend now uses the **Jakarta EE 10 (`jakarta.*`)
-namespace**, so it requires a WildFly release that targets Jakarta EE 10.
+| Bower | — | Deprecated package manager | `static/bower.json` |
 
 ---
 
@@ -91,105 +95,63 @@ namespace**, so it requires a WildFly release that targets Jakarta EE 10.
 
 | Tool | Version | Notes |
 |---|---|---|
-| JDK | **25** | Java 25 (LTS). The build targets `maven.compiler.release=25`. |
-| Maven | 3.6+ | 3.9.x verified. |
-| WildFly | **27+** | A WildFly release on Jakarta EE 10 / `jakarta.*`. Do **not** use WildFly 26 or older (those are still on the `javax.*` namespace and will not run this app). |
+| JDK | **25** | The build targets `maven.compiler.release=25`. If your Maven runs on an older JDK, set `JAVA_HOME` to a JDK 25 installation. |
+| Maven | 3.6+ | 3.8.x / 3.9.x verified. |
 
-Verify your toolchain:
+No application server is required.
 
 ```bash
 java -version   # should report 25.x
 mvn -version
 ```
 
-### 2. Install WildFly
-
-Download and unpack WildFly 31.0.1.Final (any directory is fine; these
-steps use `~/wildfly-local`):
+### 2. Build
 
 ```bash
-mkdir -p ~/wildfly-local && cd ~/wildfly-local
-curl -LO https://download.jboss.org/wildfly/31.0.1.Final/wildfly-31.0.1.Final.zip
-unzip -q wildfly-31.0.1.Final.zip
+mvn clean verify
 ```
 
-> The official download host is `download.jboss.org`. WildFly's GitHub
-> Releases page does **not** host the distribution `.zip`, so a
-> `github.com/.../releases/download/...` link will 404. A `.tar.gz` is also
-> available at the same path if you prefer it over the `.zip`.
+This compiles the application, runs the JUnit 5 + Mockito unit tests and the
+Spring Boot integration test (76 tests: 69 migrated unit tests covering all
+six services and all six REST controllers, plus 7 new integration tests), and
+produces the executable JAR:
 
-This gives you `~/wildfly-local/wildfly-31.0.1.Final` (referred to as
-`$WILDFLY_HOME` below).
+```
+target/inventory.jar
+```
+
+To build without running tests: `mvn clean package -DskipTests`.
+
+### 3. Run
 
 ```bash
-export WILDFLY_HOME=~/wildfly-local/wildfly-31.0.1.Final
+java -jar target/inventory.jar
 ```
 
-> **H2 driver:** no extra setup required. WildFly ships the H2 driver as the
-> `com.h2database.h2` module out of the box, which is exactly what
-> `inventory-ds.xml` references. The datasource binds automatically on
-> deploy — you do **not** need to add an H2 module or edit `standalone.xml`.
-
-### 3. Build
-
-From the project root (`java-sg-app/`):
+or, during development:
 
 ```bash
-mvn clean install
+mvn spring-boot:run
 ```
 
-This builds all three modules, runs the JUnit 4 + Mockito unit tests
-(~69 tests in `inventory-ejb` covering all six services and all six REST
-resources), and produces the deployable:
-
-```
-inventory-ear/target/inventory.ear
-```
-
-To build without running tests:
-
-```bash
-mvn clean install -DskipTests
-```
-
-### 4. Deploy
-
-The `inventory-ear` module uses WildFly's **deployment-scanner** model
-(drop the EAR into the `deployments/` directory).
-
-Start the server (leave it running in its own terminal):
-
-```bash
-$WILDFLY_HOME/bin/standalone.sh
-```
-
-In another terminal, copy the EAR into the deployments directory:
-
-```bash
-cp inventory-ear/target/inventory.ear $WILDFLY_HOME/standalone/deployments/
-```
-
-WildFly auto-deploys within a few seconds. A `inventory.ear.deployed`
-marker file appears next to it on success (a `inventory.ear.failed` marker
-indicates a deployment error — check the server console).
-
-To **redeploy** after a rebuild, just copy the new EAR over the old one; the
-scanner detects the change and redeploys.
-
-### 5. Open the app
+### 4. Open the app
 
 | What | URL |
 |---|---|
-| Frontend (AngularJS SPA) | http://localhost:8080/inventory-web/ |
-| REST API base | http://localhost:8080/inventory-web/api/ |
+| Frontend (AngularJS SPA) | http://localhost:8080/ |
+| REST API base | http://localhost:8080/api/ |
+| Health / probes | http://localhost:8080/actuator/health |
+| Metrics | http://localhost:8080/actuator/metrics |
 
-(JAX-RS is activated via `@ApplicationPath("/api")` in the EJB module and
-exposed through the web module's context root `/inventory-web`.)
+The `/api` prefix is the `@ApplicationPath("/api")` of the former JAX-RS
+activator, now carried on each controller's `@RequestMapping`. Note the
+context root changed: the SPA and API were previously served under
+`/inventory-web/` (the WAR context root) and are now served from `/`.
 
-### 6. Smoke-test the API
+### 5. Smoke-test the API
 
 ```bash
-BASE=http://localhost:8080/inventory-web/api
+BASE=http://localhost:8080/api
 
 # seeded data
 curl -s $BASE/products
@@ -208,29 +170,94 @@ curl -s -X POST $BASE/invoices/generate/1
 All endpoints should return `200`/`201`. Orders, invoices, and
 notifications start empty (only products and customers are seeded).
 
-### Stopping / undeploying
+### 6. Container image
 
-- **Stop the server:** `Ctrl-C` in the terminal running `standalone.sh`
-  (or `$WILDFLY_HOME/bin/jboss-cli.sh --connect command=:shutdown`).
-- **Undeploy without stopping:** delete the EAR from the deployments dir —
-  `rm $WILDFLY_HOME/standalone/deployments/inventory.ear` — and the scanner
-  removes it.
+```bash
+docker build -t inventory-management .
+docker run --rm -p 8080:8080 inventory-management
+```
+
+The `Dockerfile` is a multi-stage build (`maven:3-amazoncorretto-25` build
+stage, `amazoncorretto:25-alpine` runtime), runs as a non-root user, sizes the
+heap with `-XX:MaxRAMPercentage=75`, and declares a `HEALTHCHECK` against
+`/actuator/health`.
 
 ### Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
-| `inventory.ear.failed` marker appears | Open the WildFly console output; the stack trace names the failing component. |
-| REST calls return `500` with `NullPointerException` on a service field | A JAX-RS resource is not being managed as an EJB. All resources must be annotated `@Stateless` so the container injects their `@EJB` fields. |
+| Startup fails with `Failed to configure a DataSource` | The H2 driver or the `spring.datasource.*` settings are missing — check `application.yml`. |
 | `500` with `LazyInitializationException` / Jackson `JsonMappingException` | A JPA relationship is being serialized after its transaction closed. Lazy back-references are marked `@JsonIgnore`; associations the frontend needs (`Order.customer`, `Invoice.order`) are `FetchType.EAGER`. |
-| Port 8080 already in use | Another process (or a second WildFly) holds the port. Stop it, or start WildFly with an offset: `standalone.sh -Djboss.socket.binding.port-offset=100` (app then on `:8180`). |
-| App runs but data is empty after restart | Expected — H2 is in-memory with `create-drop`; the `DataSeederBean` reseeds products/customers on each deploy. |
+| Port 8080 already in use | Start with a different port: `java -jar target/inventory.jar --server.port=8180`. |
+| App runs but data is empty after restart | Expected — H2 is in-memory with `create-drop`; `DataSeederBean` reseeds products/customers on each start. |
 
 ## Project layout
 
 ```
-inventory-management-parent/   (root pom, dependency management)
-├── inventory-ejb/     EJB module: entities, services, REST resources, tests
-├── inventory-web/     WAR module: AngularJS 1.x SPA
-└── inventory-ear/     EAR module: packaging + WildFly datasource descriptor
+inventory-management/
+├── pom.xml                        Spring Boot application POM
+├── Dockerfile                     multi-stage container build
+└── src
+    ├── main/java/com/example/inventory/
+    │   ├── InventoryApplication.java   @SpringBootApplication entry point
+    │   ├── entity/  dto/               JPA entities and transfer objects
+    │   ├── service/                    @Service business logic
+    │   ├── rest/                       @RestController endpoints under /api
+    │   └── util/                       logging + invoice-number helpers
+    ├── main/resources/
+    │   ├── application.yml             datasource, JPA, actuator config
+    │   ├── logback-spring.xml          logging config
+    │   └── static/                     AngularJS 1.x SPA
+    └── test/java/com/example/inventory/
+        ├── InventoryApplicationTests.java   @SpringBootTest + MockMvc
+        ├── service/                    service unit tests
+        └── rest/                       controller unit tests
 ```
+
+---
+
+## Migration outcome
+
+Migrated from Jakarta EE 10 / EJB on WildFly to Spring Boot 3.5.16.
+
+**What changed**
+
+- The three Maven modules (`inventory-ejb`, `inventory-web`, `inventory-ear`)
+  were consolidated into one Spring Boot module. All 34 main and 12 test
+  sources kept their packages and class names.
+- `@Stateless` session beans → `@Service` + `@Transactional`;
+  `@EJB`/field injection → constructor injection; `@Local` removed from the
+  six `*ServiceLocal` business interfaces (the interfaces themselves are
+  retained).
+- `@Singleton @Startup` + `@PostConstruct` `DataSeederBean` → `@Component`
+  implementing `CommandLineRunner`, with `seed()` now `@Transactional`.
+- JAX-RS resources → `@RestController`; `@Path`/`@GET`/`@PathParam`/
+  `@QueryParam` → `@RequestMapping` family; `Response` → `ResponseEntity`
+  with identical HTTP status codes. Unannotated JAX-RS body parameters were
+  given explicit `@RequestBody`.
+- `InventoryRestApplication` (the `@ApplicationPath("/api")` activator) was
+  deleted; its `/api` prefix is now part of every controller mapping.
+- `persistence.xml`, `inventory-ds.xml`, `ejb-jar.xml`, `beans.xml`,
+  `web.xml` and `log4j2.properties` were removed after every setting was
+  transferred to `application.yml` / `logback-spring.xml`.
+- Tests migrated from JUnit 4 to JUnit 5. All 69 original tests and their
+  assertions are preserved; 7 Spring Boot integration tests were added.
+
+**Open items / behaviour to review**
+
+- `LoggingUtil.getLogger(Class<?>)` now returns `org.slf4j.Logger` instead of
+  `org.apache.log4j.Logger`. The class and method names are unchanged and all
+  call sites emit the same messages, but this is a public signature change for
+  any out-of-tree caller.
+- The context root changed from `/inventory-web/` to `/`, and `index.html`'s
+  `<base href>` was updated accordingly. Bookmarked
+  `/inventory-web/...` URLs will no longer resolve.
+- `web.xml`'s `<display-name>` has no Spring Boot equivalent and was dropped.
+- Transaction boundaries now begin at the Spring service proxy rather than at
+  the EJB container. Propagation semantics match (EJB `REQUIRED` default →
+  Spring `@Transactional` default), but the seeding path now runs as one
+  explicit transaction.
+- EJB remoting is out of scope: the `*ServiceLocal` interfaces are now plain
+  Java interfaces and can no longer be looked up over JNDI.
+- No coverage tool was configured before or after the migration, so
+  per-package test coverage is unmeasured.

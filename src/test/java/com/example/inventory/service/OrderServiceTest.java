@@ -1,7 +1,8 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,8 +20,8 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.dto.OrderRequestDto;
 import com.example.inventory.dto.OrderRequestDto.OrderLineItemRequestDto;
@@ -39,18 +40,15 @@ public class OrderServiceTest {
     private NotificationServiceLocal notificationService;
     private OrderService orderService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         productService = mock(ProductServiceLocal.class);
         customerService = mock(CustomerServiceLocal.class);
         notificationService = mock(NotificationServiceLocal.class);
 
-        orderService = new OrderService();
+        orderService = new OrderService(productService, customerService, notificationService);
         setField(orderService, "em", em);
-        setField(orderService, "productService", productService);
-        setField(orderService, "customerService", customerService);
-        setField(orderService, "notificationService", notificationService);
     }
 
     @Test
@@ -76,18 +74,18 @@ public class OrderServiceTest {
         verify(notificationService).send(eq(NotificationChannel.EMAIL), eq("alice@example.com"), any(), any());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void placeOrder_withUnknownCustomer_throws() {
         when(customerService.findById(99L)).thenReturn(null);
-        orderService.placeOrder(buildRequest(99L, 10L, 1));
+        assertThrows(IllegalArgumentException.class, () -> orderService.placeOrder(buildRequest(99L, 10L, 1)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void placeOrder_withNoLineItems_throws() {
         OrderRequestDto request = new OrderRequestDto();
         request.setCustomerId(1L);
         request.setLineItems(new ArrayList<>());
-        orderService.placeOrder(request);
+        assertThrows(IllegalArgumentException.class, () -> orderService.placeOrder(request));
     }
 
     @Test

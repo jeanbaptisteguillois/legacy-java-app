@@ -1,7 +1,7 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -13,8 +13,8 @@ import java.util.Arrays;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.NotificationChannel;
 import com.example.inventory.entity.NotificationLog;
@@ -24,7 +24,7 @@ public class NotificationServiceTest {
     private EntityManager em;
     private NotificationService notificationService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         notificationService = new NotificationService();

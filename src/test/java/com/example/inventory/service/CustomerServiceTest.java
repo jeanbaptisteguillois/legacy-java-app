@@ -1,7 +1,8 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -15,8 +16,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.Customer;
 
@@ -25,7 +26,7 @@ public class CustomerServiceTest {
     private EntityManager em;
     private CustomerService customerService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         customerService = new CustomerService();
@@ -45,21 +46,21 @@ public class CustomerServiceTest {
         assertEquals("alice@example.com", result.getEmail());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void createCustomer_withBlankEmail_throws() {
         Customer customer = new Customer();
         customer.setFirstName("Alice");
         customer.setLastName("Nguyen");
         customer.setEmail("");
-        customerService.createCustomer(customer);
+        assertThrows(IllegalArgumentException.class, () -> customerService.createCustomer(customer));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void createCustomer_withMissingLastName_throws() {
         Customer customer = new Customer();
         customer.setFirstName("Alice");
         customer.setEmail("alice@example.com");
-        customerService.createCustomer(customer);
+        assertThrows(IllegalArgumentException.class, () -> customerService.createCustomer(customer));
     }
 
     @Test

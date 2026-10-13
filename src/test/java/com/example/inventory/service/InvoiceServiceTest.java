@@ -1,8 +1,9 @@
 package com.example.inventory.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -17,8 +18,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.entity.Invoice;
 import com.example.inventory.entity.InvoicePaymentStatus;
@@ -30,14 +31,13 @@ public class InvoiceServiceTest {
     private OrderServiceLocal orderService;
     private InvoiceService invoiceService;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         em = mock(EntityManager.class);
         orderService = mock(OrderServiceLocal.class);
 
-        invoiceService = new InvoiceService();
+        invoiceService = new InvoiceService(orderService);
         setField(invoiceService, "em", em);
-        setField(invoiceService, "orderService", orderService);
     }
 
     @Test
@@ -58,10 +58,10 @@ public class InvoiceServiceTest {
         verify(em).persist(invoice);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void generateInvoice_withUnknownOrder_throws() {
         when(orderService.findById(404L)).thenReturn(null);
-        invoiceService.generateInvoice(404L);
+        assertThrows(IllegalArgumentException.class, () -> invoiceService.generateInvoice(404L));
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.example.inventory.rest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -9,10 +9,10 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 
-import jakarta.ws.rs.core.Response;
+import org.springframework.http.ResponseEntity;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.example.inventory.dto.OrderRequestDto;
 import com.example.inventory.entity.Order;
@@ -24,11 +24,10 @@ public class OrderResourceTest {
     private OrderServiceLocal orderService;
     private OrderResource resource;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         orderService = mock(OrderServiceLocal.class);
-        resource = new OrderResource();
-        setField(resource, "orderService", orderService);
+        resource = new OrderResource(orderService);
     }
 
     @Test
@@ -58,9 +57,9 @@ public class OrderResourceTest {
         Order order = new Order();
         when(orderService.placeOrder(request)).thenReturn(order);
 
-        Response response = resource.placeOrder(request);
+        ResponseEntity<?> response = resource.placeOrder(request);
 
-        assertEquals(201, response.getStatus());
+        assertEquals(201, response.getStatusCode().value());
     }
 
     @Test
@@ -68,22 +67,16 @@ public class OrderResourceTest {
         OrderRequestDto request = new OrderRequestDto();
         when(orderService.placeOrder(request)).thenThrow(new IllegalArgumentException("No customer"));
 
-        Response response = resource.placeOrder(request);
+        ResponseEntity<?> response = resource.placeOrder(request);
 
-        assertEquals(400, response.getStatus());
+        assertEquals(400, response.getStatusCode().value());
     }
 
     @Test
     public void cancelOrder_returnsNoContent() {
-        Response response = resource.cancelOrder(5L);
+        ResponseEntity<?> response = resource.cancelOrder(5L);
 
-        assertEquals(204, response.getStatus());
+        assertEquals(204, response.getStatusCode().value());
         verify(orderService).cancelOrder(5L);
-    }
-
-    private static void setField(Object target, String fieldName, Object value) throws Exception {
-        java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(target, value);
     }
 }
