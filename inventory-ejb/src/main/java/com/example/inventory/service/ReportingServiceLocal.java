@@ -2,7 +2,7 @@ package com.example.inventory.service;
 
 import java.util.List;
 
-import javax.ejb.Local;
+import jakarta.ejb.Local;
 
 import com.example.inventory.dto.LowStockAlertDto;
 import com.example.inventory.dto.SalesSummaryDto;

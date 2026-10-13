@@ -25,25 +25,26 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
+    <maven.compiler.release>25</maven.compiler.release>
 
-    <!-- Jakarta EE 8 (javax.* namespace) - intentionally pre-Jakarta-9 rename,
-         so a future Java/EE upgrade will require the javax -> jakarta package
-         migration. -->
-    <jakarta.ee.version>8.0.1</jakarta.ee.version>
+    <!-- Jakarta EE 10 (jakarta.* namespace) - migrated from Java EE 8
+         (javax.*) as part of the Java 25 upgrade. -->
+    <jakarta.ee.version>10.0.0</jakarta.ee.version>
 
-    <!-- Deliberately outdated / EOL third-party libraries for AWS Transform
-         Continuous Modernisation detection. Do not bump these without reason. -->
-    <log4j.version>1.2.17</log4j.version>
-    <commons-lang.version>2.6</commons-lang.version>
-    <jackson.version>2.9.10</jackson.version>
-    <httpclient.version>3.1</httpclient.version>
-    <junit.version>4.11</junit.version>
-    <jaxb.version>2.3.0</jaxb.version>
+    <!-- Third-party libraries, updated to Java 25 / Jakarta EE 10 compatible
+         versions as part of the modernisation. -->
+    <log4j.version>2.25.4</log4j.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
+    <!-- Jackson: 2.18.11 is kept instead of the 2.15.2 baseline because the
+         project already resolved a newer line and downgrading would reintroduce
+         fixed security issues. -->
+    <jackson.version>2.18.11</jackson.version>
+    <junit.version>4.13.2</junit.version>
 
-    <h2.version>1.4.197</h2.version>
-    <mockito.version>3.12.4</mockito.version>
+    <h2.version>2.3.232</h2.version>
+    <mockito.version>5.24.0</mockito.version>
 
     <ejb.module.name>inventory-ejb</ejb.module.name>
     <web.module.name>inventory-web</web.module.name>
@@ -51,31 +52,35 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- Jakarta/Java EE 8 APIs - provided by WildFly at runtime -->
+      <!-- Jakarta EE 10 APIs - provided by WildFly at runtime -->
       <dependency>
-        <groupId>javax</groupId>
-        <artifactId>javaee-api</artifactId>
+        <groupId>jakarta.platform</groupId>
+        <artifactId>jakarta.jakartaee-api</artifactId>
         <version>${jakarta.ee.version}</version>
         <scope>provided</scope>
       </dependency>
 
-      <!-- ===================== Deprecated / EOL libraries ===================== -->
-
-      <!-- Log4j 1.x - EOL since 2015, superseded by Log4j 2 -->
+      <!-- Log4j 2 - the 1.2 bridge keeps the existing org.apache.log4j
+           application code working on top of the Log4j 2 core. -->
       <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-1.2-api</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
         <version>${log4j.version}</version>
       </dependency>
 
-      <!-- Commons Lang 2.x - superseded by commons-lang3 -->
+      <!-- Apache Commons Lang 3 -->
       <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>${commons-lang.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
       </dependency>
 
-      <!-- Jackson Databind 2.9.x - old line with multiple known CVEs -->
+      <!-- Jackson 2.18.x -->
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
@@ -92,27 +97,7 @@
         <version>${jackson.version}</version>
       </dependency>
 
-      <!-- Apache Commons HttpClient 3.1 - EOL, superseded by HttpComponents HttpClient -->
-      <dependency>
-        <groupId>commons-httpclient</groupId>
-        <artifactId>commons-httpclient</artifactId>
-        <version>${httpclient.version}</version>
-      </dependency>
-
-      <!-- Old standalone JAXB impl - needed on JDK 11 since javax.xml.bind was
-           removed from the JDK, but this specific line is the legacy/EOL one. -->
-      <dependency>
-        <groupId>javax.xml.bind</groupId>
-        <artifactId>jaxb-api</artifactId>
-        <version>${jaxb.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.sun.xml.bind</groupId>
-        <artifactId>jaxb-impl</artifactId>
-        <version>${jaxb.version}</version>
-      </dependency>
-
-      <!-- JUnit 4.11 - old 4.x line (predates newer 4.12/4.13 fixes) -->
+      <!-- JUnit 4.13.x -->
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
@@ -155,29 +140,36 @@
   <build>
     <pluginManagement>
       <plugins>
+        <!-- maven-compiler-plugin 3.11.0: the 3.0.5 baseline for Maven 3.8.x
+             predates <release> support (added in 3.6.0), which is required to
+             target Java 25, so the newer plugin is used deliberately. -->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>3.11.0</version>
           <configuration>
-            <source>${maven.compiler.source}</source>
-            <target>${maven.compiler.target}</target>
+            <release>${maven.compiler.release}</release>
           </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-ejb-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.2.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-war-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-ear-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
         </plugin>
       </plugins>
     </pluginManagement>

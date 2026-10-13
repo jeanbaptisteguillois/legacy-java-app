@@ -3,7 +3,7 @@ package com.example.inventory.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * Aggregated sales figures returned by the reporting service.
