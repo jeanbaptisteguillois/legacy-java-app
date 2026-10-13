@@ -1,0 +1,13 @@
+# Dev tooling only — the legacy AngularJS app itself is plain static files.
+node_modules/
+
+# Playwright + coverage artifacts
+test-results/
+playwright-report/
+coverage/
+.a2r/coverage-raw.json
+.a2r/coverage-summary.json
+.a2r/pids/
+
+# Vite build output
+dist/
