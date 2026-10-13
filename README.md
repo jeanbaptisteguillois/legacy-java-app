@@ -1,13 +1,14 @@
 # Inventory & Order Management System (Sample App)
 
-A sample Jakarta EE 8 / EJB inventory and order management system, built for
+A sample Jakarta EE 10 / EJB inventory and order management system, built for
 deployment to **WildFly**, with an **AngularJS 1.x** single-page frontend.
 
-This project is deliberately built with Java 11 and the pre-Jakarta-9
-`javax.*` package namespace, and deliberately pins several **deprecated /
-end-of-life (EOL) third-party libraries** on both the backend and frontend,
-so that modernization tooling (e.g. **AWS Transform Continuous
-Modernisation**) can detect and process them.
+The backend has been modernised to **Java 25 (LTS)** and the Jakarta EE 10
+`jakarta.*` package namespace, and its third-party libraries have been
+updated to current, supported versions. The frontend still pins several
+**deprecated / end-of-life (EOL) libraries** so that modernization tooling
+(e.g. **AWS Transform Continuous Modernisation**) can detect and process
+them.
 
 ## Architecture
 
@@ -58,25 +59,29 @@ jdbc:h2:mem:inventorydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
 The schema is generated on deploy (`hibernate.hbm2ddl.auto=create-drop`),
 so **data is reset every time the app is deployed or the server restarts**.
 
-## Deliberately deprecated / EOL dependencies
+## Backend dependency modernisation
+
+| Library | Was | Now | Where it's used |
+|---|---|---|---|
+| Log4j | 1.2.17 (EOL) | Log4j 2 `2.25.4` via `log4j-1.2-api` bridge | `LoggingUtil`, used across all services |
+| Apache Commons Lang | 2.6 | `commons-lang3` `3.18.0` | `ProductService`, `CustomerService`, `InvoiceNumberGenerator` |
+| Jackson | 2.9.10 | `2.18.11` | `InvoiceService` (audit snapshot JSON) |
+| Apache Commons HttpClient | 3.1 (EOL) | JDK `java.net.http.HttpClient` | `NotificationService` (webhook dispatch) |
+| javax.xml.bind / JAXB RI | 2.3.0 | `jakarta.xml.bind` from Jakarta EE 10 API | All JPA entities (`@XmlRootElement`) |
+| H2 | 1.4.197 | `2.3.232` | Dev/test database |
+| JUnit / Mockito | 4.11 / 3.12.4 | `4.13.2` / `5.24.0` | All unit tests |
+
+## Deliberately deprecated / EOL frontend dependencies
 
 | Library | Version | Status | Where it's used |
 |---|---|---|---|
-| Log4j | 1.2.17 | EOL (2015), superseded by Log4j 2 | `LoggingUtil`, used across all services |
-| Apache Commons Lang | 2.6 | Superseded by `commons-lang3` | `ProductService`, `CustomerService`, `InvoiceNumberGenerator` |
-| Jackson Databind | 2.9.10 | Old line, multiple known CVEs | `InvoiceService` (audit snapshot JSON) |
-| Apache Commons HttpClient | 3.1 | EOL, superseded by HttpComponents HttpClient | `NotificationService` (webhook dispatch) |
-| javax.xml.bind / JAXB RI | 2.3.0 | Standalone legacy JAXB impl (removed from JDK) | All JPA entities (`@XmlRootElement`) |
-| JUnit | 4.11 | Old 4.x line | All unit tests |
 | AngularJS | 1.5.11 | EOL since January 2022 | Entire frontend |
 | jQuery | 1.12.4 | Old 1.x line | Frontend (Bootstrap dependency) |
 | Bootstrap | 3.3.7 | Old 3.x line | Frontend styling |
 | Bower | — | Deprecated package manager | `webapp/bower.json` |
 
-Also note: the whole backend uses the **Jakarta EE 8 (`javax.*`)
-namespace** rather than Jakarta EE 9+ (`jakarta.*`), which means a future
-Java/Jakarta upgrade will require a package rename across the EJB module —
-another common modernization-tooling scenario.
+Also note: the backend now uses the **Jakarta EE 10 (`jakarta.*`)
+namespace**, so it requires a WildFly release that targets Jakarta EE 10.
 
 ---
 
@@ -86,26 +91,26 @@ another common modernization-tooling scenario.
 
 | Tool | Version | Notes |
 |---|---|---|
-| JDK | **11** | Must be Java 11. The build targets `maven.compiler.source/target=11`. |
+| JDK | **25** | Java 25 (LTS). The build targets `maven.compiler.release=25`. |
 | Maven | 3.6+ | 3.9.x verified. |
-| WildFly | **18–26** | Any WildFly release still on Jakarta EE 8 / `javax.*`. Steps below use **WildFly 18.0.1.Final**. Do **not** use WildFly 27+ (those switched to the `jakarta.*` namespace and will not run this app unmodified). |
+| WildFly | **27+** | A WildFly release on Jakarta EE 10 / `jakarta.*`. Do **not** use WildFly 26 or older (those are still on the `javax.*` namespace and will not run this app). |
 
 Verify your toolchain:
 
 ```bash
-java -version   # should report 11.x
+java -version   # should report 25.x
 mvn -version
 ```
 
 ### 2. Install WildFly
 
-Download and unpack WildFly 18.0.1.Final (any directory is fine; these
+Download and unpack WildFly 31.0.1.Final (any directory is fine; these
 steps use `~/wildfly-local`):
 
 ```bash
 mkdir -p ~/wildfly-local && cd ~/wildfly-local
-curl -LO https://download.jboss.org/wildfly/18.0.1.Final/wildfly-18.0.1.Final.zip
-unzip -q wildfly-18.0.1.Final.zip
+curl -LO https://download.jboss.org/wildfly/31.0.1.Final/wildfly-31.0.1.Final.zip
+unzip -q wildfly-31.0.1.Final.zip
 ```
 
 > The official download host is `download.jboss.org`. WildFly's GitHub
@@ -113,11 +118,11 @@ unzip -q wildfly-18.0.1.Final.zip
 > `github.com/.../releases/download/...` link will 404. A `.tar.gz` is also
 > available at the same path if you prefer it over the `.zip`.
 
-This gives you `~/wildfly-local/wildfly-18.0.1.Final` (referred to as
+This gives you `~/wildfly-local/wildfly-31.0.1.Final` (referred to as
 `$WILDFLY_HOME` below).
 
 ```bash
-export WILDFLY_HOME=~/wildfly-local/wildfly-18.0.1.Final
+export WILDFLY_HOME=~/wildfly-local/wildfly-31.0.1.Final
 ```
 
 > **H2 driver:** no extra setup required. WildFly ships the H2 driver as the
