@@ -33,16 +33,15 @@
          (javax.*) as part of the Java 25 upgrade. -->
     <jakarta.ee.version>10.0.0</jakarta.ee.version>
 
-    <!-- Deliberately outdated / EOL third-party libraries for AWS Transform
-         Continuous Modernisation detection. Do not bump these without reason. -->
-    <log4j.version>1.2.17</log4j.version>
-    <commons-lang.version>2.6</commons-lang.version>
-    <jackson.version>2.9.10</jackson.version>
-    <httpclient.version>3.1</httpclient.version>
-    <junit.version>4.11</junit.version>
+    <!-- Third-party libraries, updated to Java 25 / Jakarta EE 10 compatible
+         versions as part of the modernisation. -->
+    <log4j.version>2.25.4</log4j.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
+    <jackson.version>2.18.11</jackson.version>
+    <junit.version>4.13.2</junit.version>
 
-    <h2.version>1.4.197</h2.version>
-    <mockito.version>3.12.4</mockito.version>
+    <h2.version>2.3.232</h2.version>
+    <mockito.version>5.24.0</mockito.version>
 
     <ejb.module.name>inventory-ejb</ejb.module.name>
     <web.module.name>inventory-web</web.module.name>
@@ -58,23 +57,27 @@
         <scope>provided</scope>
       </dependency>
 
-      <!-- ===================== Deprecated / EOL libraries ===================== -->
-
-      <!-- Log4j 1.x - EOL since 2015, superseded by Log4j 2 -->
+      <!-- Log4j 2 - the 1.2 bridge keeps the existing org.apache.log4j
+           application code working on top of the Log4j 2 core. -->
       <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-1.2-api</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
         <version>${log4j.version}</version>
       </dependency>
 
-      <!-- Commons Lang 2.x - superseded by commons-lang3 -->
+      <!-- Apache Commons Lang 3 -->
       <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>${commons-lang.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
       </dependency>
 
-      <!-- Jackson Databind 2.9.x - old line with multiple known CVEs -->
+      <!-- Jackson 2.18.x -->
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
@@ -91,14 +94,7 @@
         <version>${jackson.version}</version>
       </dependency>
 
-      <!-- Apache Commons HttpClient 3.1 - EOL, superseded by HttpComponents HttpClient -->
-      <dependency>
-        <groupId>commons-httpclient</groupId>
-        <artifactId>commons-httpclient</artifactId>
-        <version>${httpclient.version}</version>
-      </dependency>
-
-      <!-- JUnit 4.11 - old 4.x line (predates newer 4.12/4.13 fixes) -->
+      <!-- JUnit 4.13.x -->
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

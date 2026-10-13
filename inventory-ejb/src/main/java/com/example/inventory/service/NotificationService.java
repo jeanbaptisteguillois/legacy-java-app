@@ -1,6 +1,12 @@
 package com.example.inventory.service;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 
@@ -8,10 +14,6 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.log4j.Logger;
 
 import com.example.inventory.entity.NotificationChannel;
@@ -23,10 +25,9 @@ import com.example.inventory.util.LoggingUtil;
  * (order confirmations, low-stock alerts, etc.) and persisting a log entry
  * for each attempt.
  *
- * <p>Outbound webhook delivery uses Apache Commons HttpClient 3.1
- * ({@code commons-httpclient}), an EOL library superseded by
- * Apache HttpComponents HttpClient. Retained deliberately for this sample
- * application.</p>
+ * <p>Outbound webhook delivery uses the JDK's built-in
+ * {@link java.net.http.HttpClient}, replacing the EOL Apache Commons
+ * HttpClient 3.1 library.</p>
  */
 @Stateless
 public class NotificationService implements NotificationServiceLocal {
@@ -62,26 +63,29 @@ public class NotificationService implements NotificationServiceLocal {
         }
 
         // EMAIL / SMS notifications are simulated via an outbound webhook call
-        // using the legacy Commons HttpClient 3.1 API.
-        HttpClient client = new HttpClient();
-        PostMethod post = new PostMethod(WEBHOOK_URL);
+        // using the JDK HTTP client.
         try {
             String payload = "{\"channel\":\"" + channel + "\",\"recipient\":\"" + recipient
                     + "\",\"subject\":\"" + subject + "\"}";
-            post.setRequestEntity(new StringRequestEntity(payload, "application/json", "UTF-8"));
-            client.executeMethod(post);
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder(URI.create(WEBHOOK_URL))
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             LOG.info("Dispatched " + channel + " notification to " + recipient
-                    + " (status=" + post.getStatusCode() + ")");
+                    + " (status=" + response.statusCode() + ")");
             return true;
-        } catch (HttpException e) {
-            LOG.error("HTTP protocol error dispatching notification to " + recipient, e);
-            return false;
         } catch (IOException e) {
             LOG.error("I/O error dispatching notification to " + recipient
                     + " - webhook endpoint may be unavailable in this sample environment", e);
             return false;
-        } finally {
-            post.releaseConnection();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.error("Interrupted while dispatching notification to " + recipient, e);
+            return false;
         }
     }
 
