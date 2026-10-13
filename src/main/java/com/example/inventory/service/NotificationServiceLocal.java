@@ -1,0 +1,16 @@
+package com.example.inventory.service;
+
+import java.util.List;
+
+import com.example.inventory.entity.NotificationChannel;
+import com.example.inventory.entity.NotificationLog;
+
+/**
+ * Local business interface for dispatching and logging notifications.
+ */
+public interface NotificationServiceLocal {
+
+    NotificationLog send(NotificationChannel channel, String recipient, String subject, String body);
+
+    List<NotificationLog> findAll();
+}

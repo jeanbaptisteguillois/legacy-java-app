@@ -4,174 +4,100 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
   <groupId>com.example.inventory</groupId>
-  <artifactId>inventory-management-parent</artifactId>
+  <artifactId>inventory-management</artifactId>
   <version>1.0.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
 
-  <name>Inventory Management System - Parent</name>
+  <name>Inventory Management System</name>
   <description>
-    Sample Jakarta EE 8 / EJB inventory and order management system, built for
-    WildFly deployment, with an AngularJS 1.x single-page frontend. Deliberately
-    pins several deprecated/EOL third-party libraries so that AWS Transform
-    Continuous Modernisation can detect and process them.
+    Inventory and order management system, migrated from a Jakarta EE / EJB
+    EAR deployed on WildFly to a standalone Spring Boot application with an
+    embedded server. Serves the AngularJS 1.x single-page frontend from
+    src/main/resources/static and exposes the REST API under /api.
   </description>
-
-  <modules>
-    <module>inventory-ejb</module>
-    <module>inventory-web</module>
-    <module>inventory-ear</module>
-  </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>25</java.version>
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
     <maven.compiler.release>25</maven.compiler.release>
 
-    <!-- Jakarta EE 10 (jakarta.* namespace) - migrated from Java EE 8
-         (javax.*) as part of the Java 25 upgrade. -->
-    <jakarta.ee.version>10.0.0</jakarta.ee.version>
-
-    <!-- Third-party libraries, updated to Java 25 / Jakarta EE 10 compatible
-         versions as part of the modernisation. -->
-    <log4j.version>2.25.4</log4j.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
-    <!-- Jackson: 2.18.11 is kept instead of the 2.15.2 baseline because the
-         project already resolved a newer line and downgrading would reintroduce
-         fixed security issues. -->
-    <jackson.version>2.18.11</jackson.version>
-    <junit.version>4.13.2</junit.version>
-
     <h2.version>2.3.232</h2.version>
+    <!-- jackson-bom 2.21.7: the Spring Boot 3.5.16 BOM manages 2.21.4, which
+         carries CVE-2026-91777 / CVE-2026-68497 / CVE-2026-91776 (HIGH) and
+         several MEDIUM findings; 2.21.7 is the earliest clean release. -->
+    <jackson-bom.version>2.21.7</jackson-bom.version>
+    <!-- mockito 5.24.0: the pre-migration project pinned this version; the
+         Spring Boot BOM manages 5.17.0 and must not downgrade it. -->
     <mockito.version>5.24.0</mockito.version>
-
-    <ejb.module.name>inventory-ejb</ejb.module.name>
-    <web.module.name>inventory-web</web.module.name>
   </properties>
 
-  <dependencyManagement>
-    <dependencies>
-      <!-- Jakarta EE 10 APIs - provided by WildFly at runtime -->
-      <dependency>
-        <groupId>jakarta.platform</groupId>
-        <artifactId>jakarta.jakartaee-api</artifactId>
-        <version>${jakarta.ee.version}</version>
-        <scope>provided</scope>
-      </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
 
-      <!-- Log4j 2 - the 1.2 bridge keeps the existing org.apache.log4j
-           application code working on top of the Log4j 2 core. -->
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-1.2-api</artifactId>
-        <version>${log4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
-        <version>${log4j.version}</version>
-      </dependency>
+    <!-- JAXB: @XmlRootElement is retained on the entities and DTOs; the API and
+         runtime were previously provided by WildFly and must now be explicit. -->
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+    </dependency>
 
-      <!-- Apache Commons Lang 3 -->
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
 
-      <!-- Jackson 2.18.x -->
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
+    <!-- H2 in-memory database: the engine declared by the original
+         inventory-ds.xml datasource, carried forward unchanged. -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
 
-      <!-- JUnit 4.13.x -->
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit.version}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <!-- Mockito for unit testing EJBs in isolation (mocking EntityManager
-           and collaborating session beans). -->
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${mockito.version}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <!-- H2 - dev/test database -->
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>${h2.version}</version>
-      </dependency>
-
-      <!-- Internal modules -->
-      <dependency>
-        <groupId>com.example.inventory</groupId>
-        <artifactId>${ejb.module.name}</artifactId>
-        <version>${project.version}</version>
-        <type>ejb</type>
-      </dependency>
-      <dependency>
-        <groupId>com.example.inventory</groupId>
-        <artifactId>${web.module.name}</artifactId>
-        <version>${project.version}</version>
-        <type>war</type>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <!-- maven-compiler-plugin 3.11.0: the 3.0.5 baseline for Maven 3.8.x
-             predates <release> support (added in 3.6.0), which is required to
-             target Java 25, so the newer plugin is used deliberately. -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.11.0</version>
-          <configuration>
-            <release>${maven.compiler.release}</release>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-ejb-plugin</artifactId>
-          <version>3.2.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>3.4.0</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-ear-plugin</artifactId>
-          <version>3.3.0</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.2.5</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
+    <finalName>inventory</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
 </project>
