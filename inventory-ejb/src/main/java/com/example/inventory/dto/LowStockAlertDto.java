@@ -2,7 +2,7 @@ package com.example.inventory.dto;
 
 import java.io.Serializable;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * Lightweight transfer object describing a product that has fallen at or

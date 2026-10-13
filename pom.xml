@@ -29,10 +29,9 @@
     <maven.compiler.target>25</maven.compiler.target>
     <maven.compiler.release>25</maven.compiler.release>
 
-    <!-- Jakarta EE 8 (javax.* namespace) - intentionally pre-Jakarta-9 rename,
-         so a future Java/EE upgrade will require the javax -> jakarta package
-         migration. -->
-    <jakarta.ee.version>8.0.1</jakarta.ee.version>
+    <!-- Jakarta EE 10 (jakarta.* namespace) - migrated from Java EE 8
+         (javax.*) as part of the Java 25 upgrade. -->
+    <jakarta.ee.version>10.0.0</jakarta.ee.version>
 
     <!-- Deliberately outdated / EOL third-party libraries for AWS Transform
          Continuous Modernisation detection. Do not bump these without reason. -->
@@ -41,7 +40,6 @@
     <jackson.version>2.9.10</jackson.version>
     <httpclient.version>3.1</httpclient.version>
     <junit.version>4.11</junit.version>
-    <jaxb.version>2.3.0</jaxb.version>
 
     <h2.version>1.4.197</h2.version>
     <mockito.version>3.12.4</mockito.version>
@@ -52,10 +50,10 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- Jakarta/Java EE 8 APIs - provided by WildFly at runtime -->
+      <!-- Jakarta EE 10 APIs - provided by WildFly at runtime -->
       <dependency>
-        <groupId>javax</groupId>
-        <artifactId>javaee-api</artifactId>
+        <groupId>jakarta.platform</groupId>
+        <artifactId>jakarta.jakartaee-api</artifactId>
         <version>${jakarta.ee.version}</version>
         <scope>provided</scope>
       </dependency>
@@ -98,19 +96,6 @@
         <groupId>commons-httpclient</groupId>
         <artifactId>commons-httpclient</artifactId>
         <version>${httpclient.version}</version>
-      </dependency>
-
-      <!-- Old standalone JAXB impl - needed on JDK 11 since javax.xml.bind was
-           removed from the JDK, but this specific line is the legacy/EOL one. -->
-      <dependency>
-        <groupId>javax.xml.bind</groupId>
-        <artifactId>jaxb-api</artifactId>
-        <version>${jaxb.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.sun.xml.bind</groupId>
-        <artifactId>jaxb-impl</artifactId>
-        <version>${jaxb.version}</version>
       </dependency>
 
       <!-- JUnit 4.11 - old 4.x line (predates newer 4.12/4.13 fixes) -->
