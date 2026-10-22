@@ -1,0 +1,56 @@
+<h2>Dashboard</h2>
+
+<div ng-if="vm.loading">Loading dashboard...</div>
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<div class="row" ng-if="vm.summary">
+    <div class="col-md-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">Total Orders</div>
+            <div class="panel-body">{{ vm.summary.totalOrders }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">Total Revenue</div>
+            <div class="panel-body">{{ vm.summary.totalRevenue | currency }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">Average Order Value</div>
+            <div class="panel-body">{{ vm.summary.averageOrderValue | currency }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">Pending Invoices</div>
+            <div class="panel-body">{{ vm.summary.pendingInvoices }}</div>
+        </div>
+    </div>
+</div>
+
+<h3>Low Stock Alerts</h3>
+<button class="btn btn-warning" ng-click="vm.dispatchAlerts()" ng-if="vm.lowStockAlerts.length > 0">
+    Dispatch Alerts to Ops
+</button>
+
+<table class="table table-striped" ng-if="!vm.loading">
+    <thead>
+    <tr>
+        <th>SKU</th>
+        <th>Product</th>
+        <th>Quantity On Hand</th>
+        <th>Reorder Threshold</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="alert in vm.lowStockAlerts" class="danger">
+        <td>{{ alert.sku }}</td>
+        <td>{{ alert.productName }}</td>
+        <td>{{ alert.quantityOnHand }}</td>
+        <td>{{ alert.reorderThreshold }}</td>
+    </tr>
+    </tbody>
+</table>
+<p ng-if="!vm.loading && vm.lowStockAlerts.length === 0">No low stock alerts.</p>

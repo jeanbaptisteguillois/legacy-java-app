@@ -1,0 +1,32 @@
+<h2>Orders</h2>
+
+<a class="btn btn-primary" href="#!/orders/new">New Order</a>
+
+<div ng-if="vm.loading">Loading orders...</div>
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<table class="table table-striped" ng-if="!vm.loading">
+    <thead>
+    <tr>
+        <th>Order #</th>
+        <th>Customer</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Total</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="order in vm.orders">
+        <td>{{ order.id }}</td>
+        <td>{{ order.customer.firstName }} {{ order.customer.lastName }}</td>
+        <td>{{ order.orderDate | date:'short' }}</td>
+        <td>{{ order.status }}</td>
+        <td>{{ order.totalAmount | currency }}</td>
+        <td>
+            <button class="btn btn-sm btn-default" ng-if="order.status === 'NEW' || order.status === 'CONFIRMED'" ng-click="vm.markShipped(order)">Mark Shipped</button>
+            <button class="btn btn-sm btn-danger" ng-if="order.status !== 'CANCELLED' && order.status !== 'DELIVERED'" ng-click="vm.cancelOrder(order)">Cancel</button>
+        </td>
+    </tr>
+    </tbody>
+</table>

@@ -1,0 +1,31 @@
+<h2>Products</h2>
+
+<a class="btn btn-primary" href="#!/products/new">Add Product</a>
+
+<div ng-if="vm.loading">Loading products...</div>
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<table class="table table-striped" ng-if="!vm.loading">
+    <thead>
+    <tr>
+        <th>SKU</th>
+        <th>Name</th>
+        <th>Unit Price</th>
+        <th>Quantity On Hand</th>
+        <th>Reorder Threshold</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="product in vm.products" ng-class="{'danger': product.lowStock}">
+        <td>{{ product.sku }}</td>
+        <td><a href="#!/products/{{ product.id }}">{{ product.name }}</a></td>
+        <td>{{ product.unitPrice | currency }}</td>
+        <td>{{ product.quantityOnHand }}</td>
+        <td>{{ product.reorderThreshold }}</td>
+        <td>
+            <button class="btn btn-sm btn-danger" ng-click="vm.deleteProduct(product)">Delete</button>
+        </td>
+    </tr>
+    </tbody>
+</table>

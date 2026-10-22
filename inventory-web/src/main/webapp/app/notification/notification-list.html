@@ -1,0 +1,30 @@
+<h2>Notifications</h2>
+
+<button class="btn btn-primary" ng-click="vm.sendTest()" style="margin-bottom: 16px;">Send Test Notification</button>
+
+<div ng-if="vm.loading">Loading notifications...</div>
+<div class="alert alert-danger" ng-if="vm.error">{{ vm.error }}</div>
+
+<table class="table table-striped" ng-if="!vm.loading">
+    <thead>
+    <tr>
+        <th>Sent Date</th>
+        <th>Channel</th>
+        <th>Recipient</th>
+        <th>Subject</th>
+        <th>Successful</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="notification in vm.notifications">
+        <td>{{ notification.sentDate | date:'short' }}</td>
+        <td>{{ notification.channel }}</td>
+        <td>{{ notification.recipient }}</td>
+        <td>{{ notification.subject }}</td>
+        <td>
+            <span class="label label-success" ng-if="notification.successful">Yes</span>
+            <span class="label label-danger" ng-if="!notification.successful">No</span>
+        </td>
+    </tr>
+    </tbody>
+</table>
